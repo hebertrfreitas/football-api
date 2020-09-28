@@ -4,6 +4,8 @@ import com.hebertrfreitas.footballapi.model.Team;
 import com.hebertrfreitas.footballapi.repository.TeamRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.UriComponents;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.Optional;
 
@@ -33,14 +35,46 @@ public class TeamResource {
         return ResponseEntity.ok(team);
     }
 
-
-
     @PostMapping
-    public Team save(@RequestBody Team newTeam){
-        return this.teamRepository.save(newTeam);
+    public ResponseEntity<Object> save(@RequestBody Team newTeam, UriComponentsBuilder uriComponentsBuilder){
+
+        Team savedTeam = this.teamRepository.save(newTeam);
+        UriComponents uriComponents =
+                uriComponentsBuilder.path("teams/{id}").buildAndExpand(savedTeam.getId());
+
+        return ResponseEntity.created(uriComponents.toUri()).body(savedTeam);
     }
 
 
 
+    @PutMapping("/{id}")
+    public ResponseEntity update(@RequestBody Team updateTeam, @PathVariable String id){
+
+        Optional<Team> team = this.teamRepository.findById(id);
+        if(!team.isPresent()){
+            return ResponseEntity.notFound().build();
+        }
+
+        Team savedTeam = team.get();
+        savedTeam.setName(updateTeam.getName());
+
+        return ResponseEntity.ok().body(this.teamRepository.save(savedTeam));
+
+    }
+
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity delete(@PathVariable String id){
+
+        Optional<Team> team = this.teamRepository.findById(id);
+
+        if(!team.isPresent()){
+            return ResponseEntity.notFound().build();
+        }
+
+        this.teamRepository.delete(team.get());
+
+        return ResponseEntity.ok().build();
+    }
 
 }
